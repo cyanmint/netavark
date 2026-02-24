@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Update Rust
+      run: |
+        rustup update stable
+        rustc --version
+        cargo --version
+    - name: Install Protoc
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install protobuf-compiler libprotobuf-dev
+    - name: Build
+      run: make build
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: netavark-${{ matrix.arch }}
+        path: bin/
